@@ -119,6 +119,21 @@ stop() {
 
 	# 10s should be enough to shut everything down
 	ebegin "Stopping ${CONTAINER}"
-	lxc-stop -t 10 -n ${CONTAINER}
+	#lxc-stop -t 10 -n ${CONTAINER}
+    lxc-attach -n ${CONTAINER} -- shutdown -h now
+
+    # Wait (6 seconds)*(15 iterations)=90 seconds
+    i=0
+    while true; do
+        ZZ=$(lxc-info -n ${CONTAINER} -s -H)
+        if [ "$ZZ" != "RUNNING" ]; then break; fi
+        sleep 6
+        if [ $i = 15 ]; then
+            lxc-stop -n ${CONTAINER} || true
+            break
+        else
+            i=$(($i + 1))
+        fi
+    done
 	eend $?
 }
